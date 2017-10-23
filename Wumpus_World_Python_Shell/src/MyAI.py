@@ -25,8 +25,11 @@ class MyAI ( Agent ):
         # ======================================================================
         # YOUR CODE BEGINS
         # ======================================================================
-        
-        pass
+        self.dir = 'r'
+        self.position = (0,0)
+        self.orientation_history = [
+            (self.position, self.dir)
+        ]
         # ======================================================================
         # YOUR CODE ENDS
         # ======================================================================
@@ -35,7 +38,7 @@ class MyAI ( Agent ):
         # ======================================================================
         # YOUR CODE BEGINS
         # ======================================================================
-        
+        print(self)
         return Agent.Action.CLIMB
         # ======================================================================
         # YOUR CODE ENDS
@@ -44,8 +47,19 @@ class MyAI ( Agent ):
     # ======================================================================
     # YOUR CODE BEGINS
     # ======================================================================
+    def get_dir(self):
+        return self.dir
 
-    
+    def get_position(self):
+        return self.position
+
+
+    # Return the first and last moves that happened in the move history
+    def get_latest(self):
+        return self.orientation_history[-1]
+
+    def get_first(self):
+        return self.orientation_history[0]
     # ======================================================================
     # YOUR CODE ENDS
     # ======================================================================
