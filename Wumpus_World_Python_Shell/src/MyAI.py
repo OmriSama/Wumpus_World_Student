@@ -18,8 +18,10 @@
 # ======================================================================
 
 from Agent import Agent
+from collections import defaultdict
 
 class MyAI ( Agent ):
+    #
 
     def __init__ ( self ):
         # ======================================================================
@@ -30,6 +32,7 @@ class MyAI ( Agent ):
         self.orientation_history = [
             (self.position, self.dir)
         ]
+        self.can_shoot = True # always a boolean
         # ======================================================================
         # YOUR CODE ENDS
         # ======================================================================
@@ -38,12 +41,42 @@ class MyAI ( Agent ):
         # ======================================================================
         # YOUR CODE BEGINS
         # ======================================================================
-        print(self)
-        return Agent.Action.CLIMB
+
+        if(glitter):
+            self.moves.append('G')
+            return Agent.Action.GRAB
+        if(stench):
+            return
+            #next to Wumpus
+        if(breeze): 
+            if(len(self.moves) == 0):
+                return Agent.Action.CLIMB
+            return
+            #next to Pit
+        if(bump) :
+            
+
+            pass
+            #hit a wall
+        if(scream): 
+            pass
+            #'Wumpus is dead (only percieved on following turn)
+
+        return Agent.Action.FORWARD
         # ======================================================================
         # YOUR CODE ENDS
         # ======================================================================
-    
+    def oppdir(string a)
+    {
+        if(a == 'e'):
+            return 'w'
+        if(a == 's'):
+            return 'n'
+        if(a == 'w'):
+            return 'e'
+        if(a == 'n'):
+            return 's'
+    }
     # ======================================================================
     # YOUR CODE BEGINS
     # ======================================================================
