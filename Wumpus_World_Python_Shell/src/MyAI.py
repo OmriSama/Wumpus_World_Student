@@ -27,7 +27,7 @@ class MyAI ( Agent ):
         # ======================================================================
         # YOUR CODE BEGINS
         # ======================================================================
-        self.dir = 'r'
+        self.dir = 'e'
         self.position = (0,0)
         self.orientation_history = [
             (self.position, self.dir)
@@ -43,13 +43,12 @@ class MyAI ( Agent ):
         # ======================================================================
 
         if(glitter):
-            self.moves.append('G')
             return Agent.Action.GRAB
         if(stench):
             return
             #next to Wumpus
         if(breeze): 
-            if(len(self.moves) == 0):
+            if(len(self.orientation_history) == 0):
                 return Agent.Action.CLIMB
             return
             #next to Pit
@@ -61,22 +60,19 @@ class MyAI ( Agent ):
         if(scream): 
             pass
             #'Wumpus is dead (only percieved on following turn)
-
-        return Agent.Action.FORWARD
+        
         # ======================================================================
         # YOUR CODE ENDS
         # ======================================================================
-    def oppdir(string a)
-    {
-        if(a == 'e'):
+    def oppdir(dir_s):
+        if(dir_s == 'e'):
             return 'w'
-        if(a == 's'):
+        if(dir_s == 's'):
             return 'n'
-        if(a == 'w'):
+        if(dir_s == 'w'):
             return 'e'
-        if(a == 'n'):
+        if(dir_s == 'n'):
             return 's'
-    }
     # ======================================================================
     # YOUR CODE BEGINS
     # ======================================================================
@@ -93,6 +89,44 @@ class MyAI ( Agent ):
 
     def get_first(self):
         return self.orientation_history[0]
+
+    def move_forward(self):
+        #updates the position and orientation history
+        if(self.dir == 'e'):
+            self.position = (self.position[0] + 1, self.position[1])
+        if(self.dir == 'w'):
+            self.position = (self.position[0] - 1, self.position[1])
+        if(self.dir == 'n'):
+            self.position = (self.position[0], self.position[1] + 1)
+        if(self.dir == 's'):
+            self.position = (self.position[0], self.position[1] - 1)
+        self.orientation_history.append((self.position, self.dir))
+        return Agent.Action.FORWARD
+
+    def turn_left(self):
+        if(self.dir == 'e'):
+            self.dir = 'n'
+        if(self.dir == 'w'):
+            self.dir = 's'
+        if(self.dir == 'n'):
+            self.dir = 'w'
+        if(self.dir == 's'):
+            self.dir = 'e'
+        self.orientation_history.append((self.position, self.dir))
+        return Agent.Action.TURN_LEFT
+
+
+    def turn_right(self):
+        if(self.dir == 'e'):
+            self.dir = 's'
+        if(self.dir == 'w'):
+            self.dir = 'n'
+        if(self.dir == 'n'):
+            self.dir = 'e'
+        if(self.dir == 's'):
+            self.dir = 'w'   
+        self.orientation_history.append((self.position, self.dir))
+        return Agent.Action.TURN_RIGHT
     # ======================================================================
     # YOUR CODE ENDS
     # ======================================================================
