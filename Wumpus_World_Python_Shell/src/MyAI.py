@@ -31,6 +31,8 @@ class MyAI ( Agent ):
         self.orientation_history = [
             (self.position, self.dir)
         ]
+        self.backtrack = False
+        self.move_count = 0
         self.has_gold = False
         self.wumpus_dead = False
         self.can_shoot = True # always a boolean
@@ -46,11 +48,16 @@ class MyAI ( Agent ):
         stateArr = [stench, breeze, glitter, bump, scream]
         print(stateArr)
 
+        is_dangerous = True if breeze or stench else False
+
+        if(backtrack):
+            
+
         if(glitter):
             self.has_gold = True
-            return Agent.Action.GRAB
+            return self.grab()
             #on the coordinate where Gold is
-
+'''
         if(stench):
             x = random.randint(0,2)
             if(x == 0):
@@ -72,8 +79,22 @@ class MyAI ( Agent ):
                     self.turn_left()
                 if(x == 2):
                     self.turn_right()
-
             #next to Pit
+'''
+        if(is_dangerous):
+            if(self.get_move_count() == 0):
+                self.inc_move_count()
+                return self.climb()
+            else:
+                self.inc_move_count()
+                return self.backtrack()
+
+        #if (we're on the first block AND there's no immediate unsafe dangers)
+        #   move forward
+        elif(self.get_move_count() == 0):
+            self.inc_move_count()
+            return self.move_forward()
+    
         if(bump):
             x = random.randint(0,1)
             if(x == 0):
@@ -86,7 +107,6 @@ class MyAI ( Agent ):
             self.wumpus_dead = True
             #'Wumpus is dead (only percieved on following turn)
         return self.move_forward()
-
         # ======================================================================
         # YOUR CODE ENDS
         # ======================================================================
@@ -107,6 +127,12 @@ class MyAI ( Agent ):
 
     def get_position(self):
         return self.position
+
+    def get_move_count(self):
+        return self.move_count
+
+    def inc_move_count(self):
+        self.move_count += 1
 
     # Return the first and last moves that happened in the move history
     def get_latest(self):
@@ -153,7 +179,31 @@ class MyAI ( Agent ):
             self.dir = 'w'   
         self.orientation_history.append((self.position, self.dir))
         return Agent.Action.TURN_RIGHT
+    
+    def climb(self):
+        return Agent.Action.CLIMB
 
+    def grab(self):
+        return Agent.Action.GRAB
+
+    def get_next_position(self, old_pos, direc):
+        pos = old_pos
+        new_pos = (0,0)
+        if(direc == 's'):
+            new_pos = (pos[0], pos[1] - 1)
+        if(direc == 'n'):
+            new_pos = (pos[0], pos[1] + 1)
+        if(direc == 'e'):
+            new_pos = (pos[0] + 1, pos[1])
+        if(direc == 'w'):
+            new_pos = (pos[0] - 1, pos[1])
+        return new_pos
+
+    def move_back(self):
+        last_move = get_latest()
+        o_dir = oppdir(last_move[1])
+        old_pos = last_move[0]
+        return get_next_position(old_pos, o_dir)
 
     # ======================================================================
     # YOUR CODE ENDS
