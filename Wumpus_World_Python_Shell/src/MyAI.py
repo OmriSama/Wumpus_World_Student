@@ -18,7 +18,7 @@
 # ======================================================================
 
 from Agent import Agent
-from collections import defaultdict
+import random
 
 class MyAI ( Agent ):
     
@@ -32,6 +32,7 @@ class MyAI ( Agent ):
             (self.position, self.dir)
         ]
         self.has_gold = False
+        self.wumpus_dead = False
         self.can_shoot = True # always a boolean
         # ======================================================================
         # YOUR CODE ENDS
@@ -41,32 +42,50 @@ class MyAI ( Agent ):
         # ======================================================================
         # YOUR CODE BEGINS
         # ======================================================================
-        
-        
+        print(self.position, self.dir)
+        stateArr = [stench, breeze, glitter, bump, scream]
+        print(stateArr)
+
         if(glitter):
             self.has_gold = True
             return Agent.Action.GRAB
             #on the coordinate where Gold is
 
         if(stench):
-            return
+            x = random.randint(0,2)
+            if(x == 0):
+                self.move_forward()
+            if(x == 1):
+                self.turn_left()
+            if(x == 2):
+                self.turn_right()
             #next to Wumpus
 
         if(breeze): 
+            x = random.randint(0,2)
             if(len(self.orientation_history) == 0):
                 return Agent.Action.CLIMB
-            return Agent.Action.CLIMB
-            #next to Pit
+            else:
+                if(x == 0):
+                    self.move_forward()
+                if(x == 1):
+                    self.turn_left()
+                if(x == 2):
+                    self.turn_right()
 
-        if(bump) :
-            print ("bump")
+            #next to Pit
+        if(bump):
+            x = random.randint(0,1)
+            if(x == 0):
+                self.turn_left()
+            if(x == 1):
+                self.turn_right()
             #hit a wall
 
         if(scream): 
-            pass
+            self.wumpus_dead = True
             #'Wumpus is dead (only percieved on following turn)
-        
-        self.move_forward()
+        return self.move_forward()
 
         # ======================================================================
         # YOUR CODE ENDS
@@ -134,6 +153,8 @@ class MyAI ( Agent ):
             self.dir = 'w'   
         self.orientation_history.append((self.position, self.dir))
         return Agent.Action.TURN_RIGHT
+
+
     # ======================================================================
     # YOUR CODE ENDS
     # ======================================================================
