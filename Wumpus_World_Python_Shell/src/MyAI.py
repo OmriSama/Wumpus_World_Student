@@ -27,11 +27,14 @@ class MyAI ( Agent ):
         # YOUR CODE BEGINS
         # ======================================================================
         self.dir = 'e'
+        self.goal_dir = 'e'
         self.position = (0,0)
+        self.wanted_position = (0,0)
         self.orientation_history = [
             (self.position, self.dir)
         ]
-        self.backtrack = False
+        self.backward = False
+        self.turning = False
         self.move_count = 0
         self.has_gold = False
         self.wumpus_dead = False
@@ -48,15 +51,17 @@ class MyAI ( Agent ):
         stateArr = [stench, breeze, glitter, bump, scream]
         print(stateArr)
 
-        is_dangerous = True if breeze or stench else False
+        if(self.turning):
+            return self.change_dir(self.goal_dir)
 
-        if(backtrack):
-            
+        is_dangerous = True if breeze or stench else False
 
         if(glitter):
             self.has_gold = True
             return self.grab()
             #on the coordinate where Gold is
+        if(scream): 
+            self.wumpus_dead = True
 '''
         if(stench):
             x = random.randint(0,2)
@@ -83,11 +88,13 @@ class MyAI ( Agent ):
 '''
         if(is_dangerous):
             if(self.get_move_count() == 0):
-                self.inc_move_count()
-                return self.climb()
+                if(breeze):
+                    self.inc_move_count()
+                    return self.climb()
+                elif(stench):
+                    self.shoot()
             else:
-                self.inc_move_count()
-                return self.backtrack()
+                return self.move_back()
 
         #if (we're on the first block AND there's no immediate unsafe dangers)
         #   move forward
@@ -96,16 +103,10 @@ class MyAI ( Agent ):
             return self.move_forward()
     
         if(bump):
-            x = random.randint(0,1)
-            if(x == 0):
-                self.turn_left()
-            if(x == 1):
-                self.turn_right()
-            #hit a wall
+            self.goal_dir = self.oppdir(self.dir)
+            return self.change_dir(self.goal_dir)
+        
 
-        if(scream): 
-            self.wumpus_dead = True
-            #'Wumpus is dead (only percieved on following turn)
         return self.move_forward()
         # ======================================================================
         # YOUR CODE ENDS
@@ -165,6 +166,8 @@ class MyAI ( Agent ):
         if(self.dir == 's'):
             self.dir = 'e'
         self.orientation_history.append((self.position, self.dir))
+        if(backward):
+            self.turn_counter += 1
         return Agent.Action.TURN_LEFT
 
 
@@ -178,6 +181,8 @@ class MyAI ( Agent ):
         if(self.dir == 's'):
             self.dir = 'w'   
         self.orientation_history.append((self.position, self.dir))
+        if(backward):
+            self.turn_counter += 1
         return Agent.Action.TURN_RIGHT
     
     def climb(self):
@@ -185,6 +190,13 @@ class MyAI ( Agent ):
 
     def grab(self):
         return Agent.Action.GRAB
+
+    def shoot(self):
+        if(self.can_shoot == True):
+            self.can_shoot = False
+            return Agent.Action.SHOOT
+        else:
+            print("Can't shoot!")
 
     def get_next_position(self, old_pos, direc):
         pos = old_pos
@@ -198,12 +210,37 @@ class MyAI ( Agent ):
         if(direc == 'w'):
             new_pos = (pos[0] - 1, pos[1])
         return new_pos
+    
+ 
 
-    def move_back(self):
-        last_move = get_latest()
-        o_dir = oppdir(last_move[1])
-        old_pos = last_move[0]
-        return get_next_position(old_pos, o_dir)
+    def change_dir(self, goal_dir):
+        if self.dir == goal_dir:
+            self.turning = False   
+        else:
+            self.turning = True
+            if(oppdir(self.dir) == goal_dir):
+                return self.turn_left()
+            elif(self.dir == 'e' and goal_dir == 'n'):
+                return self.turn_left()
+            elif(self.dir == 'e' and goal_dir == 's'):
+                return self.turn_right()
+            elif(self.dir == 'w' and goal_dir == 'n'):
+                return self.turn_right()
+            elif(self.dir == 'w' and goal_dir == 's'):
+                return self.turn_left()
+            elif(self.dir == 'n' and goal_dir == 'e'):
+                return self.turn_right()
+            elif(self.dir == 'n' and goal_dir == 'w'):
+                return self.turn_left()
+            elif(self.dir == 's' and goal_dir == 'e'):
+                return self.turn_right()
+            elif(self.dir == 's' and goal_dir == 'w'):
+                return self.turn_left()
+    
+
+
+
+        
 
     # ======================================================================
     # YOUR CODE ENDS
