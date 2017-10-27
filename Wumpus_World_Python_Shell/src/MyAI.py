@@ -17,6 +17,19 @@
 #                be lost when the tournament runs your code.
 # ======================================================================
 
+'''
+    What are some of the edge cases?
+    1. Start on the gold (glitter)
+        a. Pick the gold up
+        b. Climb out
+    2. Start with a stench
+        a. Shoot arrow to figure out where Wumpus is
+    3. Start with a breeze
+        a. Climb out since you don't want to risk losing -1000 points
+    4. Wumpus is on the Gold
+
+'''
+
 from Agent import Agent
 import random
 
@@ -44,53 +57,44 @@ class MyAI ( Agent ):
         # ======================================================================
         # YOUR CODE BEGINS
         # ======================================================================
+        '''
         print(self.position, self.dir)
         stateArr = [stench, breeze, glitter, bump, scream]
         print(stateArr)
+        '''
 
         is_dangerous = True if breeze or stench else False
 
-        if(backtrack):
-            
+        '''
+        if(self.backtrack):
+            if(self.turn_counter < 2):
+                return self.turn_left()
+            else:
+                return self.move_forward()
+        '''
 
         if(glitter):
             self.has_gold = True
             return self.grab()
             #on the coordinate where Gold is
-'''
-        if(stench):
-            x = random.randint(0,2)
-            if(x == 0):
-                self.move_forward()
-            if(x == 1):
-                self.turn_left()
-            if(x == 2):
-                self.turn_right()
-            #next to Wumpus
-
-        if(breeze): 
-            x = random.randint(0,2)
-            if(len(self.orientation_history) == 0):
-                return Agent.Action.CLIMB
-            else:
-                if(x == 0):
-                    self.move_forward()
-                if(x == 1):
-                    self.turn_left()
-                if(x == 2):
-                    self.turn_right()
-            #next to Pit
-'''
+        
+        # If you have the gold and you're at the beginning, just climb.
+        if(self.has_gold and self.get_position() == (0,0) ):
+            return self.climb()
+        
         if(is_dangerous):
             if(self.get_move_count() == 0):
                 self.inc_move_count()
-                return self.climb()
+                if(breeze):
+                    return self.climb()
+                elif(stench and self.can_shoot):
+                    return self.shoot();
             else:
                 self.inc_move_count()
                 return self.backtrack()
 
-        #if (we're on the first block AND there's no immediate unsafe dangers)
-        #   move forward
+        # if (we're on the first block AND there's no immediate unsafe dangers)
+        #    move forward
         elif(self.get_move_count() == 0):
             self.inc_move_count()
             return self.move_forward()
@@ -103,7 +107,7 @@ class MyAI ( Agent ):
                 self.turn_right()
             #hit a wall
 
-        if(scream): 
+        if(scream and self.wumpus_dead == False): 
             self.wumpus_dead = True
             #'Wumpus is dead (only percieved on following turn)
         return self.move_forward()
@@ -182,6 +186,13 @@ class MyAI ( Agent ):
     
     def climb(self):
         return Agent.Action.CLIMB
+
+    def shoot(self):
+        if(self.can_shoot):
+            self.can_shoot = False
+            return Agent.Action.SHOOT
+        else:
+            print("Can't shoot!")
 
     def grab(self):
         return Agent.Action.GRAB
