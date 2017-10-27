@@ -42,13 +42,16 @@ class MyAI ( Agent ):
         # YOUR CODE BEGINS
         # ======================================================================
         self.dir = 'e'
+        self.goal_dir = 'e'
         self.position = (0,0)
+        self.wanted_position = (0,0)
         self.orientation_history = [
             (self.position, self.dir)
         ]
-        self.backtrack = False
+        self.backward = False
+        self.turning = False
         self.move_count = 0
-        self.has_gold = False
+        self.gold_obtained = False
         self.wumpus_dead = False
         self.can_shoot = True # always a boolean
         # ======================================================================
@@ -65,7 +68,8 @@ class MyAI ( Agent ):
         print(stateArr)
         '''
 
-        is_dangerous = True if breeze or stench else False
+        if(self.turning):
+            return self.change_dir(self.goal_dir)
 
         '''
         if(self.backtrack):
@@ -74,6 +78,7 @@ class MyAI ( Agent ):
             else:
                 return self.move_forward()
         '''
+        is_dangerous = True if breeze or stench else False
 
         if(glitter):
             self.got_gold()
@@ -84,14 +89,19 @@ class MyAI ( Agent ):
         if(self.has_gold() and self.get_position() == (0,0) ):
             return self.climb()
         
+        if(scream): 
+            self.wumpus_dead = True
+
         if(is_dangerous):
             if(self.get_move_count() == 0):
-                self.inc_move_count()
                 if(breeze):
+                    self.inc_move_count()
                     return self.climb()
-                elif(stench and self.can_shoot()):
-                    return self.shoot()
-
+                elif(stench):
+                    self.shoot()
+            else:
+                self.goal_dir = self.oppdir(self.dir)
+                return self.change_dir(self.goal_dir)
         # if (we're on the first block AND there's no immediate unsafe dangers)
         #    move forward
         elif(self.get_move_count() == 0):
@@ -99,12 +109,9 @@ class MyAI ( Agent ):
             return self.move_forward()
     
         if(bump):
-            x = random.randint(0,1)
-            if(x == 0):
-                self.turn_left()
-            if(x == 1):
-                self.turn_right()
-            #hit a wall
+            self.goal_dir = self.oppdir(self.dir)
+            return self.change_dir(self.goal_dir)
+        
 
         if(scream and self.wumpus_dead == False): 
             self.wumpus_dead = True
@@ -131,13 +138,13 @@ class MyAI ( Agent ):
     
     def oppdir(dir_s):
         if(dir_s == 'e'):
-        return 'w'
-    if(dir_s == 's'):
-        return 'n'
-    if(dir_s == 'w'):
-        return 'e'
-    if(dir_s == 'n'):
-        return 's'
+            return 'w'
+        if(dir_s == 's'):
+            return 'n'
+        if(dir_s == 'w'):
+            return 'e'
+        if(dir_s == 'n'):
+            return 's'
 
     # Return the first and last moves that happened in the move history
     def get_latest(self):
@@ -170,6 +177,8 @@ class MyAI ( Agent ):
         if(self.dir == 's'):
             self.dir = 'e'
         self.orientation_history.append((self.position, self.dir))
+        if(backward):
+            self.turn_counter += 1
         return Agent.Action.TURN_LEFT
 
 
@@ -183,18 +192,20 @@ class MyAI ( Agent ):
         if(self.dir == 's'):
             self.dir = 'w'   
         self.orientation_history.append((self.position, self.dir))
+        if(backward):
+            self.turn_counter += 1
         return Agent.Action.TURN_RIGHT
     
     def climb(self):
         return Agent.Action.CLIMB
 
     def has_gold(self):
-        if self.has_gold:
+        if self.gold_obtained:
             return True
         return False
 
     def got_gold(self):
-        self.has_gold = True
+        self.gold_obtained = True
 
     def can_shoot(self):
         if self.can_shoot:
@@ -211,6 +222,13 @@ class MyAI ( Agent ):
     def grab(self):
         return Agent.Action.GRAB
 
+    def shoot(self):
+        if(self.can_shoot == True):
+            self.can_shoot = False
+            return Agent.Action.SHOOT
+        else:
+            print("Can't shoot!")
+
     def get_next_position(self, old_pos, direc):
         pos = old_pos
         new_pos = (0,0)
@@ -223,12 +241,33 @@ class MyAI ( Agent ):
         if(direc == 'w'):
             new_pos = (pos[0] - 1, pos[1])
         return new_pos
+    
+ 
 
-    def move_back(self):
-        last_move = get_latest()
-        o_dir = oppdir(last_move[1])
-        old_pos = last_move[0]
-        return get_next_position(old_pos, o_dir)
+    def change_dir(self, goal_dir):
+        if self.dir == goal_dir:
+            self.turning = False   
+        else:
+            self.turning = True
+            if(oppdir(self.dir) == goal_dir):
+                return self.turn_left()
+            elif(self.dir == 'e' and goal_dir == 'n'):
+                return self.turn_left()
+            elif(self.dir == 'e' and goal_dir == 's'):
+                return self.turn_right()
+            elif(self.dir == 'w' and goal_dir == 'n'):
+                return self.turn_right()
+            elif(self.dir == 'w' and goal_dir == 's'):
+                return self.turn_left()
+            elif(self.dir == 'n' and goal_dir == 'e'):
+                return self.turn_right()
+            elif(self.dir == 'n' and goal_dir == 'w'):
+                return self.turn_left()
+            elif(self.dir == 's' and goal_dir == 'e'):
+                return self.turn_right()
+            elif(self.dir == 's' and goal_dir == 'w'):
+                return self.turn_left()
+    
 
     # ======================================================================
     # YOUR CODE ENDS
