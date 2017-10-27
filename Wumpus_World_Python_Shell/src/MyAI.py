@@ -30,8 +30,10 @@
 
 '''
 
-from Agent import Agent
 import random
+
+from Agent import Agent
+
 
 class MyAI ( Agent ):
     
@@ -74,12 +76,12 @@ class MyAI ( Agent ):
         '''
 
         if(glitter):
-            self.has_gold = True
+            self.got_gold()
             return self.grab()
             #on the coordinate where Gold is
         
         # If you have the gold and you're at the beginning, just climb.
-        if(self.has_gold and self.get_position() == (0,0) ):
+        if(self.has_gold() and self.get_position() == (0,0) ):
             return self.climb()
         
         if(is_dangerous):
@@ -87,11 +89,8 @@ class MyAI ( Agent ):
                 self.inc_move_count()
                 if(breeze):
                     return self.climb()
-                elif(stench and self.can_shoot):
-                    return self.shoot();
-            else:
-                self.inc_move_count()
-                return self.backtrack()
+                elif(stench and self.can_shoot()):
+                    return self.shoot()
 
         # if (we're on the first block AND there's no immediate unsafe dangers)
         #    move forward
@@ -114,15 +113,7 @@ class MyAI ( Agent ):
         # ======================================================================
         # YOUR CODE ENDS
         # ======================================================================
-    def oppdir(dir_s):
-        if(dir_s == 'e'):
-            return 'w'
-        if(dir_s == 's'):
-            return 'n'
-        if(dir_s == 'w'):
-            return 'e'
-        if(dir_s == 'n'):
-            return 's'
+
     # ======================================================================
     # YOUR CODE BEGINS
     # ======================================================================
@@ -137,6 +128,16 @@ class MyAI ( Agent ):
 
     def inc_move_count(self):
         self.move_count += 1
+    
+    def oppdir(dir_s):
+        if(dir_s == 'e'):
+        return 'w'
+    if(dir_s == 's'):
+        return 'n'
+    if(dir_s == 'w'):
+        return 'e'
+    if(dir_s == 'n'):
+        return 's'
 
     # Return the first and last moves that happened in the move history
     def get_latest(self):
@@ -187,12 +188,25 @@ class MyAI ( Agent ):
     def climb(self):
         return Agent.Action.CLIMB
 
+    def has_gold(self):
+        if self.has_gold:
+            return True
+        return False
+
+    def got_gold(self):
+        self.has_gold = True
+
+    def can_shoot(self):
+        if self.can_shoot:
+            return True
+        return False
+
     def shoot(self):
         if(self.can_shoot):
             self.can_shoot = False
-            return Agent.Action.SHOOT
         else:
             print("Can't shoot!")
+        return Agent.Action.SHOOT
 
     def grab(self):
         return Agent.Action.GRAB
