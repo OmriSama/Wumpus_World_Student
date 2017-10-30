@@ -19,6 +19,7 @@
 
 from Agent import Agent
 import random
+from pprint import pprint
 
 class MyAI ( Agent ):
     
@@ -47,25 +48,31 @@ class MyAI ( Agent ):
         # ======================================================================
         # YOUR CODE BEGINS
         # ======================================================================
-        print(self.position, self.dir)
+        #print(self.position, self.dir)
         stateDict = {
             'stench':stench, 'breeze':breeze, 'glitter': glitter, 'bump':bump, 'scream': scream, 'can_shoot' : self.can_shoot, 
-            'turning': self.turning, 'goal_dir': self.goal_dir
+            'turning': self.turning, 'goal_dir': self.goal_dir, 'has_gold': self.has_gold
         }
-        print(stateDict)
+
+        #pprint(stateDict)
 
         is_dangerous = True if breeze or stench else False
+
+        if(self.turning):
+            return self.change_dir(self.goal_dir)
 
         if(self.has_gold):
             if(self.position == (0,0)):
                 return self.climb()
             #backtracking to starting position
-            old_hist = self.orientation_history.pop() # ((0,0), 'e')
-            print(old_hist)
-            if(old_hist[2] == 'F' and old_hist[1] == self.get_dir()):
+            old_hist = (self.orientation_history.pop() if self.orientation_history.__len__() > 0 else None) # ((0,0), 'e')
+            #print(old_hist)
+            if(old_hist is None):
+                pass
+            elif(old_hist[2] == 'F' and old_hist[1] == self.get_dir()):
                 #turn around and move
                 self.update_goal_dir(self.oppdir(self.get_dir()))
-                return self.change_dir(goal_dir)
+                return self.change_dir(self.goal_dir)
             elif(old_hist[2] == 'F' and old_hist[1] == self.oppdir(self.get_dir())):
                 return self.move_forward()
             elif(old_hist[2] == 'TR'):
@@ -79,10 +86,6 @@ class MyAI ( Agent ):
         if(self.tile_info[0,0] > 2):
             return self.climb()
            
-
-
-        if(self.turning):
-            return self.change_dir(self.goal_dir)
 
         elif(glitter):
             self.has_gold = True
@@ -230,6 +233,7 @@ class MyAI ( Agent ):
     def change_dir(self, goal_dir):
         if self.dir == goal_dir:
             self.turning = False  
+            return self.move_forward()
         else:
             self.turning = True
             if(self.dir == 'e' and goal_dir == 'n'):
@@ -245,9 +249,9 @@ class MyAI ( Agent ):
             elif(self.dir == 'n' and goal_dir == 'w'):
                 return self.turn_left()
             elif(self.dir == 's' and goal_dir == 'e'):
-                return self.turn_right()
-            elif(self.dir == 's' and goal_dir == 'w'):
                 return self.turn_left()
+            elif(self.dir == 's' and goal_dir == 'w'):
+                return self.turn_right()
             else:
                 return self.turn_left()
         if(not self.turning):
@@ -257,10 +261,14 @@ class MyAI ( Agent ):
     def bump_help(self):
         if(self.position == (0,0) and self.dir == 'w'):
             return self.turn_right()
-        elif(self.position[0] > self.position[1]):
+        elif(self.position[0] > self.position[1] and self.dir == 'e'):
             return self.turn_left()
-        elif(self.position[0] < self.position[1]):
+        elif(self.position[0] > self.position[1] and self.dir == 's'):
             return self.turn_right()
+        elif(self.position[0] < self.position[1] and self.dir == 'n'):
+            return self.turn_right()
+        elif(self.position[0] < self.position[1] and self.dir == 'w'):
+            return self.turn_left() 
         elif(self.position[0] == self.position[1] and self.dir == 'e'):
             return self.turn_right()
         elif(self.position[0] == self.position[1] and self.dir == 'n'):
