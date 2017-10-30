@@ -29,17 +29,16 @@ class MyAI ( Agent ):
         self.dir = 'e'
         self.goal_dir = 'e'
         self.position = (0,0)
-        self.wanted_position = (0,0)
+        self.action = ''
         self.orientation_history = [
-            (self.position, self.dir)
+            (self.position, self.dir, self.action)
         ]
-        self.dir_list = ['e', 'w', 'n', 's']
         self.turning = False
         self.move_count = 0
         self.has_gold = False
         self.wumpus_alive = True
         self.can_shoot = True # always a boolean
-        self.tile_info = {(0,0) : ['e']}
+        self.tile_info = {(0,0) : 1}
         # ======================================================================
         # YOUR CODE ENDS
         # ======================================================================
@@ -57,10 +56,19 @@ class MyAI ( Agent ):
 
         is_dangerous = True if breeze or stench else False
 
+        if(not self.wumpus_alive):
+            is_dangerous = True if breeze else False
+
+        if(self.tile_info[0,0] > 2):
+            return self.climb()
+
         if(self.has_gold):
             #backtracking to starting position
-            pass
-
+            old_tile = orientation_history.pop() # ((0,0), 'e')
+            print(old_tile)
+            next_pos = self.get_next_position()
+            if(self.position == (0,0)):
+                return self.climb()
         if(self.turning):
             return self.change_dir(self.goal_dir)
 
@@ -75,6 +83,9 @@ class MyAI ( Agent ):
             if(self.get_move_count() == 0):
                 if(breeze or stench):
                     return self.climb()
+            elif(breeze):
+                self.update_goal_dir(self.oppdir(self.get_dir()))
+                return self.change_dir(self.goal_dir)
             elif(stench):
                 #greedy right now, implement heuristics at higher level
                 if(self.wumpus_alive and self.can_shoot):
@@ -88,8 +99,8 @@ class MyAI ( Agent ):
         elif(bump):
             self.recover_position()
             return self.bump_help()
-        else:
-            return self.move_forward()
+       
+        return self.move_forward()
         # ======================================================================
         # YOUR CODE ENDS
         # ======================================================================
@@ -138,11 +149,11 @@ class MyAI ( Agent ):
             self.position = (self.position[0], self.position[1] + 1)
         if(self.dir == 's'):
             self.position = (self.position[0], self.position[1] - 1)
-        self.orientation_history.append((self.position, self.dir))
-        if(self.tile_info.get(self.position) == None):
-            self.tile_info[self.position] = [self.dir]
+        self.orientation_history.append((self.position, self.dir, 'F'))
+        if(self.position in self.tile_info):
+            self.tile_info[self.position] += 1
         else:
-            self.tile_info[self.position].append(self.dir)
+            self.tile_info[self.get_position()] = 1
         self.inc_move_count()
         return Agent.Action.FORWARD
 
@@ -155,8 +166,7 @@ class MyAI ( Agent ):
             self.dir = 'w'
         elif(self.dir == 's'):
             self.dir = 'e'
-        self.orientation_history.append((self.position, self.dir))
-        self.tile_info[self.position].append(self.dir)
+        self.orientation_history.append((self.position, self.dir, 'TL'))
         self.inc_move_count()
         return Agent.Action.TURN_LEFT
 
@@ -164,14 +174,13 @@ class MyAI ( Agent ):
     def turn_right(self):
         if(self.dir == 'e'):
             self.dir = 's'
-        if(self.dir == 'w'):
+        elif(self.dir == 'w'):
             self.dir = 'n'
-        if(self.dir == 'n'):
+        elif(self.dir == 'n'):
             self.dir = 'e'
-        if(self.dir == 's'):
+        elif(self.dir == 's'):
             self.dir = 'w'   
-        self.orientation_history.append((self.position, self.dir))
-        self.tile_info[self.position].append(self.dir)
+        self.orientation_history.append((self.position, self.dir, 'TR'))
         self.inc_move_count()
         return Agent.Action.TURN_RIGHT
     
@@ -231,7 +240,7 @@ class MyAI ( Agent ):
     
 
     def bump_help(self):
-        if(self.position[0] == self.position[1] and self.dir == 'w'):
+        if(self.position == (0,0) and self.dir == 'w'):
             return self.turn_right()
         elif(self.position[0] > self.position[1]):
             return self.turn_left()
