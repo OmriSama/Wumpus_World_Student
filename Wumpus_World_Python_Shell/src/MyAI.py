@@ -56,19 +56,31 @@ class MyAI ( Agent ):
 
         is_dangerous = True if breeze or stench else False
 
+        if(self.has_gold):
+            if(self.position == (0,0)):
+                return self.climb()
+            #backtracking to starting position
+            old_hist = self.orientation_history.pop() # ((0,0), 'e')
+            print(old_hist)
+            if(old_hist[2] == 'F' and old_hist[1] == self.get_dir()):
+                #turn around and move
+                self.update_goal_dir(self.oppdir(self.get_dir()))
+                return self.change_dir(goal_dir)
+            elif(old_hist[2] == 'F' and old_hist[1] == self.oppdir(self.get_dir())):
+                return self.move_forward()
+            elif(old_hist[2] == 'TR'):
+                return self.turn_left()
+            elif(old_hist[2] == 'TL'):
+                return self.turn_right()
+
         if(not self.wumpus_alive):
             is_dangerous = True if breeze else False
 
         if(self.tile_info[0,0] > 2):
             return self.climb()
+           
 
-        if(self.has_gold):
-            #backtracking to starting position
-            old_tile = orientation_history.pop() # ((0,0), 'e')
-            print(old_tile)
-            next_pos = self.get_next_position()
-            if(self.position == (0,0)):
-                return self.climb()
+
         if(self.turning):
             return self.change_dir(self.goal_dir)
 
@@ -149,7 +161,8 @@ class MyAI ( Agent ):
             self.position = (self.position[0], self.position[1] + 1)
         if(self.dir == 's'):
             self.position = (self.position[0], self.position[1] - 1)
-        self.orientation_history.append((self.position, self.dir, 'F'))
+        if(not self.has_gold):
+            self.orientation_history.append((self.position, self.dir, 'F'))
         if(self.position in self.tile_info):
             self.tile_info[self.position] += 1
         else:
@@ -166,7 +179,8 @@ class MyAI ( Agent ):
             self.dir = 'w'
         elif(self.dir == 's'):
             self.dir = 'e'
-        self.orientation_history.append((self.position, self.dir, 'TL'))
+        if(not self.has_gold):
+            self.orientation_history.append((self.position, self.dir, 'TL'))
         self.inc_move_count()
         return Agent.Action.TURN_LEFT
 
@@ -180,7 +194,8 @@ class MyAI ( Agent ):
             self.dir = 'e'
         elif(self.dir == 's'):
             self.dir = 'w'   
-        self.orientation_history.append((self.position, self.dir, 'TR'))
+        if(not self.has_gold):
+            self.orientation_history.append((self.position, self.dir, 'TR'))
         self.inc_move_count()
         return Agent.Action.TURN_RIGHT
     
