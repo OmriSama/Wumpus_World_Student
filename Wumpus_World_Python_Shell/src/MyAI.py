@@ -57,16 +57,20 @@ class MyAI ( Agent ):
         #pprint(stateDict)
 
         is_dangerous = True if breeze or stench else False
+        pprint(self.orientation_history)
 
+        print("position of last turn:", self.get_position())
         if(self.turning):
             return self.change_dir(self.goal_dir)
 
-        if(self.has_gold):
-            if(self.position == (0,0)):
+        if(self.has_gold): # only while we have the gold, will we backtrack
+            print("in has gold")
+            if(len(self.orientation_history) == 0):
                 return self.climb()
+            print("not in (0,0)")
             #backtracking to starting position
             old_hist = (self.orientation_history.pop() if self.orientation_history.__len__() > 0 else None) # ((0,0), 'e')
-            #print(old_hist)
+            print(old_hist)
             if(old_hist is None):
                 pass
             elif(old_hist[2] == 'F' and old_hist[1] == self.get_dir()):
@@ -74,10 +78,13 @@ class MyAI ( Agent ):
                 self.update_goal_dir(self.oppdir(self.get_dir()))
                 return self.change_dir(self.goal_dir)
             elif(old_hist[2] == 'F' and old_hist[1] == self.oppdir(self.get_dir())):
+                print("backtrack move: F")
                 return self.move_forward()
             elif(old_hist[2] == 'TR'):
+                print("backtrack move: TL")
                 return self.turn_left()
             elif(old_hist[2] == 'TL'):
+                print("backtrack move: TR")
                 return self.turn_right()
 
         if(not self.wumpus_alive):
@@ -286,7 +293,6 @@ class MyAI ( Agent ):
             self.position = (self.position[0], self.position[1] - 1)
         elif(self.dir == 's'):
             self.position = (self.position[0], self.position[1] + 1)
-        
 
     # ======================================================================
     # YOUR CODE ENDS
