@@ -40,6 +40,7 @@ class MyAI ( Agent ):
         self.wumpus_alive = True
         self.can_shoot = True # always a boolean
         self.tile_info = {(0,0) : 1}
+        self.visited_nodes = {(0,0): True}
         # ======================================================================
         # YOUR CODE ENDS
         # ======================================================================
@@ -54,7 +55,8 @@ class MyAI ( Agent ):
             'turning': self.turning, 'goal_dir': self.goal_dir, 'has_gold': self.has_gold
         }
 
-        #pprint(stateDict)
+        pprint(stateDict)
+        pprint(self.visited_nodes)
 
         is_dangerous = True if breeze or stench else False
         #pprint(self.orientation_history)
@@ -90,18 +92,19 @@ class MyAI ( Agent ):
         if(not self.wumpus_alive):
             is_dangerous = True if breeze else False
 
-        if(self.tile_info[0,0] > 2):
+        if(self.tile_info[(0,0)] > 2):
             return self.climb()
-           
+        
 
-        elif(glitter):
+
+        if(glitter):
             self.has_gold = True
             return self.grab()
             #on the coordinate where Gold is
-        elif(scream): 
+        if(scream): 
             self.wumpus_alive = False
 
-        elif(is_dangerous):
+        if(is_dangerous):
             if(self.get_move_count() == 0):
                 if(breeze or stench):
                     return self.climb()
@@ -121,7 +124,9 @@ class MyAI ( Agent ):
         elif(bump):
             self.recover_position()
             return self.bump_help()
-       
+        elif(not bump):
+            self.visited_nodes[self.get_position()] = True
+
         return self.move_forward()
         # ======================================================================
         # YOUR CODE ENDS
