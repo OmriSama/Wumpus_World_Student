@@ -34,6 +34,7 @@ class MyAI ( Agent ):
         self.orientation_history = [
             (self.position, self.dir, self.action)
         ]
+        self.visited_turn = False
         self.turning = False
         self.move_count = 0
         self.has_gold = False
@@ -59,11 +60,13 @@ class MyAI ( Agent ):
         pprint(self.visited_nodes)
 
         is_dangerous = True if breeze or stench else False
-        #pprint(self.orientation_history)
+        pprint(self.orientation_history)
 
         #print("position of last turn:", self.get_position())
         if(self.turning):
             return self.change_dir(self.goal_dir)
+
+        
 
         if(self.has_gold): # only while we have the gold, will we backtrack
             #print("in has gold")
@@ -106,8 +109,10 @@ class MyAI ( Agent ):
 
         if(is_dangerous):
             if(self.get_move_count() == 0):
-                if(breeze or stench):
+                if(breeze):
                     return self.climb()
+                elif(stench and self.can_shoot):
+                    return self.shoot()
             elif(breeze):
                 self.update_goal_dir(self.oppdir(self.get_dir()))
                 return self.change_dir(self.goal_dir)
@@ -127,6 +132,14 @@ class MyAI ( Agent ):
         elif(not bump):
             self.visited_nodes[self.get_position()] = True
 
+
+        if(self.tile_info[self.get_position()] == 2):
+            print("already visited and testing")
+            self.update_goal_dir(self.visited_move())
+            return self.change_dir(self.goal_dir)          
+            
+           
+       
         return self.move_forward()
         # ======================================================================
         # YOUR CODE ENDS
@@ -299,6 +312,17 @@ class MyAI ( Agent ):
         elif(self.dir == 's'):
             self.position = (self.position[0], self.position[1] + 1)
 
+    def visited_move(self):
+        if(self.dir == 'w'):
+            return 'n'
+        elif(self.dir == 'e'):
+            return 'n'
+        elif(self.dir == 's'):
+            return 'e'
+        elif(self.dir == 'n'):
+            return 'e'
+
+  
     # ======================================================================
     # YOUR CODE ENDS
     # ======================================================================
