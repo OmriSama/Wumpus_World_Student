@@ -34,7 +34,8 @@ class MyAI ( Agent ):
         self.orientation_history = [
             (self.position, self.dir, self.action)
         ]
-        self.visited_turn = False
+        self.post_bump = False
+        self.bump_counter = 0
         self.turning = False
         self.move_count = 0
         self.has_gold = False
@@ -59,7 +60,7 @@ class MyAI ( Agent ):
       
 
         is_dangerous = True if breeze or stench else False
-        pprint(self.orientation_history)
+        #pprint(self.orientation_history)
 
         #print("position of last turn:", self.get_position())
         if(self.turning):
@@ -94,11 +95,13 @@ class MyAI ( Agent ):
         if(not self.wumpus_alive):
             is_dangerous = True if breeze else False
 
+        if(self.post_bump):
+            self.bump_counter += 1
 
         if(self.tile_info[0,0] > 2):
             return self.climb()
            
-
+        
         elif(glitter):
             self.has_gold = True
             return self.grab()
@@ -106,36 +109,51 @@ class MyAI ( Agent ):
         elif(scream): 
             self.wumpus_alive = False
 
+        elif(bump):
+        #print("inside bump")
+        #might be popping at wrong time
+            self.orientation_history.pop()
+            self.post_bump = True
+            self.recover_position()
+            return self.bump_help()   
+
         elif(is_dangerous):
             if(self.get_move_count() == 0):
                 if(breeze):
                     return self.climb()
                 elif(stench and self.can_shoot):
                     return self.shoot()
+            elif(self.get_position() == (0,0) and not self.can_shoot and self.tile_info[(0,0)] > 1):
+                return self.climb()
             elif(breeze):
+                self.post_bump = False
                 self.update_goal_dir(self.oppdir(self.get_dir()))
                 return self.change_dir(self.goal_dir)
             elif(stench):
                 #greedy right now, implement heuristics at higher level
                 if(self.wumpus_alive and self.can_shoot):
                     return self.shoot()
-                else:
+                elif(self.wumpus_alive and not self.can_shoot):
                     return self.move_forward()
+                else:
+                    self.update_goal_dir(self.oppdir(self.get_dir()))
+                    return self.change_dir(self.goal_dir)
             else:
                 self.update_goal_dir(self.oppdir(self.get_dir()))
                 return self.change_dir(self.goal_dir)
+                
+        elif(self.post_bump and self.bump_counter >= 3):
+            #handle this stuff in function
+            #print("inside post_bump")
+            return self.post_bump_move()
 
-        elif(bump):
+        '''elif(bump):
+            #print("inside bump")
+            self.post_bump = True
             self.recover_position()
-            return self.bump_help()
-
-        elif(self.tile_info[self.get_position()] == 2):
-            print("already visited and testing")
-            self.update_goal_dir(self.visited_move())
-            return self.change_dir(self.goal_dir)          
+            return self.bump_help()     '''       
             
-           
-       
+
         return self.move_forward()
         # ======================================================================
         # YOUR CODE ENDS
@@ -280,8 +298,11 @@ class MyAI ( Agent ):
     
 
     def bump_help(self):
+        self.bump_counter += 1
         if(self.position == (0,0) and self.dir == 'w'):
             return self.turn_right()
+        elif(self.position[0] < self.position[1] and self.dir == 'w' and self.post_bump):
+           return self.turn_right()
         elif(self.position[0] > self.position[1] and self.dir == 'e'):
             return self.turn_left()
         elif(self.position[0] > self.position[1] and self.dir == 's'):
@@ -308,15 +329,19 @@ class MyAI ( Agent ):
         elif(self.dir == 's'):
             self.position = (self.position[0], self.position[1] + 1)
 
-    def visited_move(self):
-        if(self.dir == 'w'):
-            return 'n'
-        elif(self.dir == 'e'):
-            return 'n'
-        elif(self.dir == 's'):
-            return 'e'
-        elif(self.dir == 'n'):
-            return 'e'
+    def post_bump_move(self):
+        self.bump_counter = 0
+        self.post_bump = False
+        if(self.get_position()[0] == self.get_position()[1]):
+            return self.turn_left()
+        if(self.get_dir() == 'w'):
+            return self.move_forward()
+        if(self.get_dir() == 's'):
+            return self.move_forward()       
+        if(self.get_position()[0] < self.get_position()[1]):
+            return self.turn_right()
+        elif(self.get_position()[0] > self.get_position()[1]):
+            return self.turn_left()
 
   
     # ======================================================================
