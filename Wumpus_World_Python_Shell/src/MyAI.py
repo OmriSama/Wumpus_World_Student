@@ -41,6 +41,7 @@ class MyAI ( Agent ):
         self.has_gold = False
         self.wumpus_alive = True
         self.can_shoot = True # always a boolean
+        self.shot_pos = None
         self.tile_info = {(0,0) : 1}
         self.visited_nodes = {(0,0): True}
         # ======================================================================
@@ -57,8 +58,8 @@ class MyAI ( Agent ):
             'turning': self.turning, 'goal_dir': self.goal_dir, 'has_gold': self.has_gold
         }
 
-        pprint(stateDict)
-        pprint(self.visited_nodes)
+        #pprint(stateDict)
+        #xpprint(self.visited_nodes)
 
         is_dangerous = True if breeze or stench else False
         #pprint(self.orientation_history)
@@ -123,6 +124,7 @@ class MyAI ( Agent ):
                 if(breeze):
                     return self.climb()
                 elif(stench and self.can_shoot):
+                    self.shot_pos = self.get_position()
                     return self.shoot()
             elif(self.get_position() == (0,0) and not self.can_shoot and self.tile_info[(0,0)] > 1):
                 return self.climb()
@@ -133,7 +135,12 @@ class MyAI ( Agent ):
             elif(stench):
                 #greedy right now, implement heuristics at higher level
                 if(self.wumpus_alive and self.can_shoot):
+                    self.shot_pos = self.get_position()
                     return self.shoot()
+                elif (self.wumpus_alive and not self.can_shoot and self.shot_pos == self.get_position()):
+                    return self.move_forward()
+                elif (self.wumpus_alive and not self.can_shoot and self.shot_pos == self.get_position() and self.tile_info[self.position] > 0):
+                    return self.move_forward()
                 elif(self.wumpus_alive and not self.can_shoot):
                     self.update_goal_dir(self.oppdir(self.get_dir()))
                     return self.change_dir(self.goal_dir)
@@ -254,6 +261,7 @@ class MyAI ( Agent ):
     def shoot(self):
         if(self.can_shoot == True):
             self.can_shoot = False
+            self.orientation_history.append((self.position, self.dir, 'S'))
             return Agent.Action.SHOOT
         else:
             print("Can't shoot!")
