@@ -135,6 +135,9 @@ class MyAI ( Agent ):
                 if(self.wumpus_alive and self.can_shoot):
                     return self.shoot()
                 elif(self.wumpus_alive and not self.can_shoot):
+                    self.update_goal_dir(self.oppdir(self.get_dir()))
+                    return self.change_dir(self.goal_dir)
+                elif(not self.wumpus_alive and not self.can_shoot):
                     return self.move_forward()
                 else:
                     self.update_goal_dir(self.oppdir(self.get_dir()))
@@ -338,7 +341,7 @@ class MyAI ( Agent ):
         if(self.get_dir() == 'w'):
             return self.move_forward()
         if(self.get_dir() == 's'):
-            return self.move_forward()       
+            return self.move_forward()   
         if(self.get_position()[0] < self.get_position()[1]):
             return self.turn_right()
         elif(self.get_position()[0] > self.get_position()[1]):
