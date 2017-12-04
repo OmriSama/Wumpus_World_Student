@@ -48,6 +48,9 @@ class MyAI ( Agent ):
         self.just_shot = False
         self.tile_info = {(0,0) : 1}
         self.tracker = {}
+        self.depth = 0
+        self.predecessor = {}
+        self.destination = ()
         # ======================================================================
         # YOUR CODE ENDS
         # ======================================================================
@@ -113,22 +116,20 @@ class MyAI ( Agent ):
         elif(scream): 
             self.wumpus_alive = False
 
-        elif(bump):
+        if(bump):
         #print("inside bump")
             
             self.orientation_history.pop()
             self.post_bump = True
             self.recover_position()
-            pos = self.get_position()
-            if(pos[0] <= self.max_x and self.get_dir() == 'e'):
-                self.max_x = pos[0]
-            if(pos[1] <= self.max_y and self.get_dir() == 'n'):
-                self.max_y = pos[1]         
-            if(stench and self.wumpus_alive):
-                self.post_bump = False
-                self.update_goal_dir(self.oppdir(self.get_dir()))
-                return self.change_dir(self.goal_dir)     
-            return self.bump_help()
+            self.bump_info()     
+            self.clean_pred()  
+            self.clean_tracker()
+                       #if(stench and self.wumpus_alive):
+            #    self.post_bump = False
+            #    self.update_goal_dir(self.oppdir(self.get_dir()))
+            #    return self.change_dir(self.goal_dir)     
+            #return self.bump_help()
 
 
         elif(is_dangerous):
@@ -144,8 +145,9 @@ class MyAI ( Agent ):
             elif(breeze):
                 self.breeze_update_tracker()
                 if(self.tile_info[self.get_position()] <= 1 and not stench):
+                    self.update_predecessor()
                     return self.tracker_based_move()
-                elif(not stench):
+                elif(self.tile_info[self.get_position()] > 1):
                     return self.get_home_help()
                 else:
                     self.update_goal_dir(self.oppdir(self.get_dir()))
@@ -158,7 +160,6 @@ class MyAI ( Agent ):
                 #update dict for possible pits
                 #self.update_pit_tracker()
                 #find num neighbors for current tile for perentage calc of pit chance
-                #self.num_unvisited_neighbors()
                 #check tracker for each tile value to make next move
                 #self.calculated_move()
                 #self.update_goal_dir(self.oppdir(self.get_dir()))
@@ -183,16 +184,21 @@ class MyAI ( Agent ):
                 self.update_goal_dir(self.oppdir(self.get_dir()))
                 return self.change_dir(self.goal_dir)
 
-        elif(self.post_bump and self.bump_counter >= 3):
+        #elif(self.post_bump and self.bump_counter >= 3):
             #handle this stuff in function
             #print("inside post_bump")
             #self.update_tracker(breeze)
-            return self.post_bump_move()   
+         #   return self.post_bump_move()   
 
         if(not bump):
             self.update_tracker()  
-        
-        return self.move_forward()
+        #self.make_move()
+        self.update_predecessor()
+        self.just_shot = False
+        if(self.change_destination() == 0):
+            return self.change_depth()
+        return self.go_to_adj(self.destination)
+        #return self.move_forward()
         # ======================================================================
         # YOUR CODE ENDS
         # ======================================================================
@@ -373,7 +379,7 @@ class MyAI ( Agent ):
     def post_bump_move(self):
         self.bump_counter = 0
         self.post_bump = False
-
+        print("in post_bump")
         if(self.get_position()[0] == self.get_position()[1]):
             return self.turn_left()
         if(self.get_position()[0] < self.get_position()[1]):
@@ -397,28 +403,32 @@ class MyAI ( Agent ):
         
         self.tracker[x,y] = no_pit
         
-        if(((x+1,y) not in self.tile_info) and (x+1 <= self.max_x)):
-            if((x+1,y) not in self.tracker):
-                self.tracker[x+1,y] = basic
-            else:
-                self.tracker[x+1,y] = (self.tracker[x+1,y][0]+1, self.tracker[x+1,y][1])
-        if(((x-1,y) not in self.tile_info) and (x-1 >= self.min_x)):
-            if((x-1,y) not in self.tracker):
-                self.tracker[x-1,y] = basic
-            else:
-                self.tracker[x-1,y] = (self.tracker[x-1,y][0]+1, self.tracker[x-1,y][1])
-        if(((x,y+1) not in self.tile_info) and (y+1 <= self.max_y)):
-            if((x,y+1) not in self.tracker):
-                self.tracker[x,y+1] = basic
-            else:
-                self.tracker[x,y+1] = (self.tracker[x,y+1][0]+1, self.tracker[x,y+1][1])
-        if(((x,y-1) not in self.tile_info) and (y-1 >= self.min_y)):
-            if((x,y-1) not in self.tracker):
-                self.tracker[x,y-1] = basic
-            else:
-                self.tracker[x,y-1] = (self.tracker[x,y-1][0]+1, self.tracker[x,y-1][1])
+        if((x+1,y) not in self.tile_info):
+            if(self.in_bounds(x+1,y)):
+                if((x+1,y) not in self.tracker):
+                    self.tracker[x+1,y] = basic
+                else:
+                    self.tracker[x+1,y] = (self.tracker[x+1,y][0]+1, self.tracker[x+1,y][1])
+        if((x-1,y) not in self.tile_info):
+            if(self.in_bounds(x-1,y)):
+                if((x-1,y) not in self.tracker):
+                    self.tracker[x-1,y] = basic
+                else:
+                    self.tracker[x-1,y] = (self.tracker[x-1,y][0]+1, self.tracker[x-1,y][1])
+        if((x,y+1) not in self.tile_info):
+            if(self.in_bounds(x,y+1)):
+                if((x,y+1) not in self.tracker):
+                    self.tracker[x,y+1] = basic
+                else:
+                    self.tracker[x,y+1] = (self.tracker[x,y+1][0]+1, self.tracker[x,y+1][1])
+        if((x,y-1) not in self.tile_info):
+            if(self.in_bounds(x,y-1)):
+                if((x,y-1) not in self.tracker):
+                    self.tracker[x,y-1] = basic
+                else:
+                    self.tracker[x,y-1] = (self.tracker[x,y-1][0]+1, self.tracker[x,y-1][1])
 
-        #print(self.tracker)
+        print(self.tracker)
 
     def breeze_update_tracker(self):
         x = self.get_position()[0]
@@ -479,27 +489,182 @@ class MyAI ( Agent ):
     def get_home_help(self):
         x = self.get_position()[0]
         y = self.get_position()[1]
-        if(x > self.min_x):
-            if(self.dir != 'w'):
-                self.update_goal_dir('w')
-                return self.change_dir(self.goal_dir)
-            else:
-                return self.move_forward()
-        elif(x == self.min_x):
-            self.update_goal_dir('s')
-            return self.change_dir(self.goal_dir)
-        if(y > self.min_y):
-            if(self.dir != 's'):
-                self.update_goal_dir('s')
-                return self.change_dir(self.goal_dir)
-            else:
-                return self.move_forward()
-        elif(y == self.min_y):
+        dest_tile = self.predecessor[x,y]
+        return self.go_to_pred(dest_tile)
+
+
+    def bump_info(self):
+        x = self.get_position()[0]
+        y = self.get_position()[1]
+        if(x <= self.max_x and self.get_dir() == 'e'):
+            self.max_x = x
+        if(y <= self.max_y and self.get_dir() == 'n'):
+            self.max_y = y
+        print(self.max_x, self.max_y)
+
+    def update_predecessor(self):
+        dir = self.get_dir()
+        x = self.get_position()[0]
+        y = self.get_position()[1]
+
+        if(dir == 'e'):
+            if((x+1,y) not in self.tile_info):
+                self.predecessor[x+1,y] = x,y
+        if(dir == 'w'):
+            if((x-1,y) not in self.tile_info):
+                self.predecessor[x-1,y] = x,y
+        if(dir == 'n'):
+            if((x,y+1) not in self.tile_info):
+                self.predecessor[x,y+1] = x,y
+        if(dir == 's'):
+            if((x,y-1) not in self.tile_info):
+                self.predecessor[x,y-1] = x,y
+
+        print(self.predecessor)
+
+    def clean_pred(self):
+        pred = dict(self.predecessor)
+        for key in pred:
+            if(key[0] > self.max_x):
+                del self.predecessor[key]
+            if(key[0] < self.min_x):
+                del self.predecessor[key]
+            if(key[1] > self.max_y):
+                del self.predecessor[key]
+            if(key[1] < self.min_y):
+                del self.predecessor[key]
+
+    def clean_tracker(self):
+        track = dict(self.tracker)
+        for key in track:
+            if(key[0] > self.max_x):
+                del self.tracker[key]
+            if(key[0] < self.min_x):
+                del self.tracker[key]
+            if(key[1] > self.max_y):
+                del self.tracker[key]
+            if(key[1] < self.min_y):
+                del self.tracker[key]
+
+    def go_to_pred(self, tile):
+        dir = self.get_dir()
+        dest_x = tile[0]
+        dest_y = tile[1]
+        x = self.get_position()[0]
+        y = self.get_position()[1]
+        print("inside go_to_pred")
+
+        if(x < dest_x):
             self.update_goal_dir('w')
             return self.change_dir(self.goal_dir)
+        elif(x > dest_x):
+            self.update_goal_dir('e')
+            return self.change_dir(self.goal_dir)
+        elif(y < dest_y):
+            self.update_goal_dir('n')
+            return self.change_dir(self.goal_dir)
+        elif(y > dest_y):
+            self.update_goal_dir('s')
+            return self.change_dir(self.goal_dir)
 
 
-    
+    def go_to_adj(self, tile):
+        dir = self.get_dir()
+        dest_x = tile[0]
+        dest_y = tile[1]
+        x = self.get_position()[0]
+        y = self.get_position()[1]
+        print("inside go_to_adj")
+
+        if(dest_x < x):
+            self.update_goal_dir('w')
+            return self.change_dir(self.goal_dir)
+        elif(dest_x > x):
+            self.update_goal_dir('e')
+            return self.change_dir(self.goal_dir)
+        elif(dest_y < y):
+            self.update_goal_dir('s')
+            return self.change_dir(self.goal_dir)
+        elif(dest_y > y):
+            self.update_goal_dir('n')
+            return self.change_dir(self.goal_dir)
+
+    def change_destination(self):
+        #fix post increasing depth
+        x = self.get_position()[0]
+        y = self.get_position()[1]
+        dir = self.get_dir()
+        depth = self.depth
+        ret = 0
+        print("in changing destination")
+        if(y == depth):
+            if(self.in_bounds(x+1,y)):
+                if((x+1,y) not in self.tile_info):
+                    print("destination updated to :",(x+1,y))
+                    ret = 1
+                    self.destination = (x+1,y)
+            if(self.in_bounds(x-1,y)):
+                if((x-1,y) not in self.tile_info):
+                    print("destination updated to :",(x-1,y))
+                    ret = 1
+                    self.destination = (x-1,y)
+           # elif(dir == 'n'):
+           #     if((x,y+1) not in self.tile_info):
+           #         if(y+1 < self.max_x):
+           #             self.destination = (x,y+1)
+           # elif(dir == 's'):
+           #     if((x,y-1) not in self.tile_info):
+           #         if(y-1 > self.min_y)
+           #             self.destination = (x,y-1)
+        return ret
+
+    def change_depth(self):
+        x = self.get_position()[0]
+        y = self.get_position()[1]
+        dir = self.get_dir()
+        print("in changing depth")
+        if((x,y+1) not in self.tile_info):
+            if(self.in_bounds(x,y+1)):
+                print("increasing depth")
+                return self.increase_depth()
+        else:
+            print("decreasing depth")
+            return self.decrease_depth()
+
+
+    def increase_depth(self):
+        x = self.get_position()[0]
+        y = self.get_position()[1]
+        self.depth += 1
+        self.destination = (x,y+1)
+        print(self.destination)
+        return self.go_to_adj(self.destination)
+        #self.update_goal_dir('n')
+        #return self.change_dir(self.goal_dir)
+
+    def decrease_depth(self):
+
+        x = self.get_position()[0]
+        y = self.get_position()[1]
+        self.depth -= 1
+        self.destination = (x,y-1)
+        return self.go_to_adj(self.destination)
+        #self.update_goal_dir('s')
+        #return self.change_dir(self.goal_dir)
+
+
+
+    def in_bounds(self, a, b):
+        x = a
+        y = b
+        ret = True
+        if((x > self.max_x) or (x < self.min_x)):
+            ret = False
+        if((y > self.max_y) or (y < self.min_y)):
+            ret = False
+        return ret
+
+
 
 
 
